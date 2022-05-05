@@ -31,15 +31,15 @@ function crearAdmin(req, res) {
 
 function registrarUserAdmin(req, res) {
     const parametro = req.body;
-    const modeloUsuario = new Usuario();
+    const usuarioModel = new Usuario();
 
     if (req.user.rol == 'ROL_ADMIN') {
   
     if (parametro.nombre && parametro.email && parametro.password) {
-      modeloUsuario.nombre = parametro.nombre;
-      modeloUsuario.email = parametro.email;
-      modeloUsuario.password = parametro.password;
-      modeloUsuario.rol = "ROL_ADMIN";
+      usuarioModel.nombre = parametro.nombre;
+      usuarioModel.email = parametro.email;
+      usuarioModel.password = parametro.password;
+      usuarioModel.rol = "ROL_ADMIN";
   
       Usuario.find({ email: parametro.email }, (err, usuarioEncontrado) => {
         if (usuarioEncontrado.length == 0) {
@@ -48,20 +48,14 @@ function registrarUserAdmin(req, res) {
             null,
             null,
             (err, passwordEncriptada) => {
-              modeloUsuario.password = passwordEncriptada;
+              usuarioModel.password = passwordEncriptada;
   
-              modeloUsuario.save((err, usuarioGuardado) => {
+              usuarioModel.save((err, usuarioGuardado) => {
                 if (err)
-                  return res
-                    .status(500)
-                    .send({ mensaje: "Error en la petición" });
+                  return res.status(500).send({ mensaje: "Error en la petición" });
                 if (!usuarioGuardado)
-                  return res
-                    .status(500)
-                    .send({ mensaje: "Error al agregar  admin" });
-                return res
-                  .status(200)
-                  .send({ usuarioAdminCreado: usuarioGuardado });
+                  return res.status(500).send({ mensaje: "Error al agregar  admin" });
+                return res.status(200).send({ usuarioAdminCreado: usuarioGuardado });
               });
             }
           );
@@ -70,17 +64,39 @@ function registrarUserAdmin(req, res) {
         }
       });
     } else {
-      return res
-        .status(500)
-        .send({ error: "Debe de enviar los parametros obligatorios" });
+      return res.status(500).send({ error: "Debe de enviar los parametros obligatorios" });
     }
   } else {
     return res.status(400).send({ mensaje: 'No tiene acceso a registrar' })
 }
   }
+
+  function login(req, res) {
+    var parametros = req.body;
+    Usuario.findOne({ email: parametros.email }, (err, usuarioEncontrado) => {
+        if (err) return res.status(500).send({ mensaje: 'Error en la peticion' });
+        if (usuarioEncontrado) {
+            bcrypt.compare(parametros.password, usuarioEncontrado.password,
+                (err, verificacionPassword) => {
+                    if (verificacionPassword) {
+                        return res.status(200)
+                            .send({ token: jwt.crearToken(usuarioEncontrado) })
+                    } else {
+                        return res.status(500)
+                            .send({ mensaje: 'La contrasena no coincide.' })
+                    }
+                })
+        } else {
+            return res.status(500)
+                .send({ mensaje: 'El usuario, no se ha podido identificar' })
+        }
+    })
+}
+  
   
 
 module.exports = {
     crearAdmin,
-    registrarUserAdmin
+    registrarUserAdmin,
+    login
 }
