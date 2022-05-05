@@ -32,6 +32,8 @@ function crearAdmin(req, res) {
 function registrarUserAdmin(req, res) {
     const parametro = req.body;
     const modeloUsuario = new Usuario();
+
+    if (req.user.rol == 'ROL_ADMIN') {
   
     if (parametro.nombre && parametro.email && parametro.password) {
       modeloUsuario.nombre = parametro.nombre;
@@ -72,6 +74,9 @@ function registrarUserAdmin(req, res) {
         .status(500)
         .send({ error: "Debe de enviar los parametros obligatorios" });
     }
+  } else {
+    return res.status(400).send({ mensaje: 'No tiene acceso a registrar' })
+}
   }
   
 
